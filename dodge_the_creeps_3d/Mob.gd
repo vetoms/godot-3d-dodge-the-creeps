@@ -1,38 +1,38 @@
-extends KinematicBody
-
-# Emitted when the player jumped on the mob.
-signal squashed
+extends CharacterBody3D
 
 # Minimum speed of the mob in meters per second.
-export var min_speed = 10
+@export var min_speed = 10
 # Maximum speed of the mob in meters per second.
-export var max_speed = 18
+@export var max_speed = 18
 
-var velocity = Vector3.ZERO
-
+# Emitted when the player jumped on the mob
+signal squashed
 
 func _physics_process(_delta):
-	# warning-ignore:return_value_discarded
-	move_and_slide(velocity)
+	move_and_slide()
 
-
+# This function will be called from the Main scene.
 func initialize(start_position, player_position):
+	# We position the mob by placing it at start_position
+	# and rotate it towards player_position, so it looks at the player.
 	look_at_from_position(start_position, player_position, Vector3.UP)
-	rotate_y(rand_range(-PI / 4, PI / 4))
+	# Rotate this mob randomly within range of -90 and +90 degrees,
+	# so that it doesn't move directly towards the player.
+	rotate_y(randf_range(-PI / 4, PI / 4))
 
-	var random_speed = rand_range(min_speed, max_speed)
-	# We calculate a forward velocity first, which represents the speed.
+	# We calculate a random speed (integer)
+	var random_speed = randi_range(min_speed, max_speed)
+	# We calculate a forward velocity that represents the speed.
 	velocity = Vector3.FORWARD * random_speed
-	# We then rotate the vector based on the mob's Y rotation to move in the direction it's looking.
+	# We then rotate the velocity vector based on the mob's Y rotation
+	# in order to move in the direction the mob is looking.
 	velocity = velocity.rotated(Vector3.UP, rotation.y)
 
-	$AnimationPlayer.playback_speed = random_speed / min_speed
+	$AnimationPlayer.speed_scale = random_speed / min_speed
 
+func _on_visible_on_screen_notifier_3d_screen_exited():
+	queue_free()
 
 func squash():
-	emit_signal("squashed")
-	queue_free()
-
-
-func _on_VisibilityNotifier_screen_exited():
-	queue_free()
+	squashed.emit()
+	queue_free() # Destroy this node
